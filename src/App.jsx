@@ -2,6 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase.js";
 import Auth from "./Auth.jsx";
 
+const DAILY_LIMIT = 20; // free messages per day
+
+const startOfTodayISO = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+};
+
 const formatTime = (date) =>
   new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -74,6 +82,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [loadingChats, setLoadingChats] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [usedToday, setUsedToday] = useState(0);
+  const [showPaywall, setShowPaywall] = useState(false);
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -91,9 +101,24 @@ export default function App() {
   const userId = session?.user?.id;
   const userEmail = session?.user?.email;
 
-  useEffect(() => { if (userId) loadChats(); }, [userId]);
+  useEffect(() => { if (userId) { loadChats(); loadUsage(); } }, [userId]);
   useEffect(() => { if (activeChatId) loadMessages(activeChatId); }, [activeChatId]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+
+  const loadUsage = async () => {
+    // Get user's chat ids, then count today's user messages in them
+    const { data: userChats } = await supabase
+      .from("chats").select("id").eq("user_id", userId);
+    const ids = (userChats || []).map((c) => c.id);
+    if (ids.length === 0) { setUsedToday(0); return; }
+    const { count } = await supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "user")
+      .in("chat_id", ids)
+      .gte("created_at", startOfTodayISO());
+    setUsedToday(count || 0);
+  };
 
   const loadChats = async () => {
     setLoadingChats(true);
@@ -135,6 +160,13 @@ export default function App() {
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
+
+    // Free daily limit check
+    if (usedToday >= DAILY_LIMIT) {
+      setShowPaywall(true);
+      return;
+    }
+
     let chatId = activeChatId;
 
     if (!chatId) {
@@ -153,6 +185,7 @@ export default function App() {
     setMessages(newMessages);
     setInput("");
     setLoading(true);
+    setUsedToday((n) => n + 1);
 
     if (messages.length === 0) {
       await supabase.from("chats").update({ title: input.slice(0, 40) }).eq("id", chatId);
@@ -266,6 +299,15 @@ export default function App() {
         <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 14, background: "rgba(0,0,0,0.2)" }}>
           <button onClick={() => setSidebarOpen((v) => !v)} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 20, padding: 4 }}>☰</button>
           <div style={{ flex: 1 }}><span style={{ fontWeight: 600, fontSize: 15, color: "#d1fae5" }}>{chats.find((c) => c.id === activeChatId)?.title || "Select or start a conversation"}</span></div>
+          {(() => {
+            const remaining = Math.max(0, DAILY_LIMIT - usedToday);
+            const low = remaining <= 5;
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: low ? "rgba(248,113,113,0.1)" : "rgba(255,255,255,0.04)", border: `1px solid ${low ? "rgba(248,113,113,0.3)" : "rgba(255,255,255,0.1)"}`, borderRadius: 20, padding: "4px 12px" }}>
+                <span style={{ fontSize: 12, color: low ? "#f87171" : "#9ca3af", fontFamily: "'Space Mono', monospace" }}>{remaining}/{DAILY_LIMIT} free left</span>
+              </div>
+            );
+          })()}
           <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 20, padding: "4px 12px" }}>
             <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 6px #4ade80" }} />
             <span style={{ fontSize: 12, color: "#4ade80", fontFamily: "'Space Mono', monospace" }}>Online</span>
@@ -300,6 +342,15 @@ export default function App() {
 
         <div style={{ padding: "16px 20px", background: "rgba(0,0,0,0.3)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ maxWidth: 760, margin: "0 auto" }}>
+            {usedToday >= DAILY_LIMIT && (
+              <div onClick={() => setShowPaywall(true)} style={{ cursor: "pointer", marginBottom: 12, padding: "14px 18px", background: "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(34,211,238,0.12))", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <div>
+                  <div style={{ color: "#f0fdf4", fontWeight: 600, fontSize: 14 }}>🎉 You've used all {DAILY_LIMIT} free messages today!</div>
+                  <div style={{ color: "#9ca3af", fontSize: 13, marginTop: 2 }}>Upgrade to Premium for unlimited practice.</div>
+                </div>
+                <span style={{ background: "linear-gradient(135deg, #4ade80, #22d3ee)", color: "#0a0f0a", fontWeight: 700, fontSize: 13, padding: "8px 16px", borderRadius: 10, whiteSpace: "nowrap" }}>Upgrade $5/mo</span>
+              </div>
+            )}
             <div style={{ display: "flex", gap: 12, alignItems: "flex-end", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "12px 16px" }}>
               <textarea ref={textareaRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKey} placeholder="Write something in English… I'll correct you gently 😊" rows={1}
                 style={{ flex: 1, background: "none", border: "none", color: "#e2e8f0", fontSize: 15, lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif", maxHeight: 120, overflowY: "auto" }}
@@ -310,6 +361,34 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {showPaywall && (
+        <div onClick={() => setShowPaywall(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0d130d", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 22, padding: 32, position: "relative", animation: "fadeIn 0.3s ease" }}>
+            <button onClick={() => setShowPaywall(false)} style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", color: "#6b7280", fontSize: 22, cursor: "pointer" }}>×</button>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg, #4ade80, #22d3ee)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 30, marginBottom: 16, boxShadow: "0 0 30px rgba(74,222,128,0.3)" }}>⭐</div>
+              <h2 style={{ color: "#f0fdf4", fontSize: 22, fontWeight: 700, marginBottom: 8 }}>TeachBek Premium</h2>
+              <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 20 }}>You've reached your free daily limit. Go unlimited!</p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+              {["Unlimited messages every day", "IELTS & TOEFL practice mode (coming soon)", "Track your mistakes & progress (coming soon)", "Priority support"].map((f) => (
+                <div key={f} style={{ display: "flex", alignItems: "center", gap: 10, color: "#d1fae5", fontSize: 14 }}>
+                  <span style={{ color: "#4ade80", fontWeight: 700 }}>✓</span> {f}
+                </div>
+              ))}
+            </div>
+            <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <span style={{ color: "#f0fdf4", fontSize: 32, fontWeight: 800 }}>$5</span>
+              <span style={{ color: "#6b7280", fontSize: 15 }}> / month</span>
+            </div>
+            <button onClick={() => alert("Payment via Kaspi is coming soon! 🚀")} style={{ width: "100%", padding: 14, background: "linear-gradient(135deg, #4ade80, #22d3ee)", border: "none", borderRadius: 12, color: "#0a0f0a", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+              Upgrade to Premium
+            </button>
+            <p style={{ textAlign: "center", color: "#4b5563", fontSize: 12, marginTop: 12 }}>Your free messages reset tomorrow.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

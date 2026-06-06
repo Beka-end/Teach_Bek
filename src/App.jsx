@@ -86,6 +86,7 @@ export default function App() {
   const [usedToday, setUsedToday] = useState(0);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
+  const [topicLoading, setTopicLoading] = useState(false);
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -160,8 +161,9 @@ export default function App() {
     setChats([]); setMessages([]); setActiveChatId(null);
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+  const sendMessage = async (overrideText) => {
+    const text = (typeof overrideText === "string" ? overrideText : input).trim();
+    if (!text || loading) return;
 
     // Free daily limit check
     if (usedToday >= DAILY_LIMIT) {
@@ -173,7 +175,7 @@ export default function App() {
 
     if (!chatId) {
       const { data } = await supabase
-        .from("chats").insert({ user_id: userId, title: input.slice(0, 40) })
+        .from("chats").insert({ user_id: userId, title: text.slice(0, 40) })
         .select().single();
       if (!data) return;
       chatId = data.id;
@@ -181,7 +183,7 @@ export default function App() {
       setActiveChatId(data.id);
     }
 
-    const userMsg = { role: "user", content: input.trim(), chat_id: chatId, created_at: new Date().toISOString() };
+    const userMsg = { role: "user", content: text, chat_id: chatId, created_at: new Date().toISOString() };
     const { data: savedUser } = await supabase.from("messages").insert(userMsg).select().single();
     const newMessages = [...messages, savedUser || userMsg];
     setMessages(newMessages);
@@ -190,8 +192,8 @@ export default function App() {
     setUsedToday((n) => n + 1);
 
     if (messages.length === 0) {
-      await supabase.from("chats").update({ title: input.slice(0, 40) }).eq("id", chatId);
-      setChats((prev) => prev.map((c) => (c.id === chatId ? { ...c, title: input.slice(0, 40) } : c)));
+      await supabase.from("chats").update({ title: text.slice(0, 40) }).eq("id", chatId);
+      setChats((prev) => prev.map((c) => (c.id === chatId ? { ...c, title: text.slice(0, 40) } : c)));
     }
 
     try {
@@ -215,6 +217,19 @@ export default function App() {
 
   const handleKey = (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  };
+
+  // Ask TeachBek to invent a fresh conversation topic and start chatting.
+  const surpriseTopic = async () => {
+    if (loading || topicLoading) return;
+    if (usedToday >= DAILY_LIMIT) { setShowPaywall(true); return; }
+    const prompt = "Surprise me! Pick one fresh, interesting conversation topic for English practice (not the usual boring ones) and start the conversation by introducing the topic in one sentence and asking me an engaging opening question about it.";
+    setTopicLoading(true);
+    try {
+      await sendMessage(prompt);
+    } finally {
+      setTopicLoading(false);
+    }
   };
 
   const groupedChats = chats.reduce((acc, chat) => {
@@ -323,7 +338,23 @@ export default function App() {
               <div style={{ width: 80, height: 80, borderRadius: 24, background: "linear-gradient(135deg, #4ade80, #22d3ee)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, marginBottom: 20, boxShadow: "0 0 40px rgba(74,222,128,0.3)" }}>🎓</div>
               <h2 style={{ color: "#f0fdf4", fontWeight: 700, fontSize: 24, marginBottom: 10 }}>Welcome to TeachBek</h2>
               <p style={{ color: "#6b7280", fontSize: 15, maxWidth: 400, lineHeight: 1.6 }}>Your personal AI English teacher. Write anything — I'll chat with you and gently correct your mistakes.</p>
-              <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap", justifyContent: "center" }}>
+
+              <div style={{ marginTop: 28, width: "100%", maxWidth: 440, background: "linear-gradient(135deg, rgba(74,222,128,0.08), rgba(34,211,238,0.08))", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 18, padding: 20, textAlign: "left" }}>
+                <div style={{ fontSize: 11, color: "#4ade80", fontFamily: "'Space Mono', monospace", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>✨ Not sure what to say?</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ fontSize: 36 }}>🎲</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: "#f0fdf4", fontWeight: 700, fontSize: 18 }}>Surprise me with a topic</div>
+                    <div style={{ color: "#9ca3af", fontSize: 13, marginTop: 2 }}>TeachBek picks a fresh topic and starts the chat.</div>
+                  </div>
+                </div>
+                <button onClick={surpriseTopic} disabled={topicLoading || loading} style={{ width: "100%", marginTop: 16, padding: "12px", background: "linear-gradient(135deg, #4ade80, #22d3ee)", border: "none", borderRadius: 12, color: "#0a0f0a", fontSize: 15, fontWeight: 700, cursor: topicLoading ? "wait" : "pointer", opacity: topicLoading ? 0.6 : 1, fontFamily: "'DM Sans', sans-serif" }}>
+                  {topicLoading ? "Thinking of a topic…" : "Surprise me 🎲"}
+                </button>
+              </div>
+
+              <div style={{ marginTop: 24, fontSize: 12, color: "#4b5563", fontFamily: "'Space Mono', monospace" }}>or talk about anything:</div>
+              <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap", justifyContent: "center" }}>
                 {["Tell me about yourself", "Let's practice small talk", "Help me with grammar", "Talk about my hobbies"].map((s) => (
                   <button key={s} onClick={() => { setInput(s); textareaRef.current?.focus(); }} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "8px 16px", color: "#9ca3af", fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>{s}</button>
                 ))}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase.js";
 import Auth from "./Auth.jsx";
+import Legal from "./Legal.jsx";
 
 const DAILY_LIMIT = 20; // free messages per day
 
@@ -84,6 +85,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [usedToday, setUsedToday] = useState(0);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [showLegal, setShowLegal] = useState(false);
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -292,6 +294,7 @@ export default function App() {
             </div>
             <button className="logout-btn" onClick={logout} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 12, fontFamily: "'Space Mono', monospace", flexShrink: 0, transition: "color 0.2s" }}>Log out</button>
           </div>
+          <div onClick={() => setShowLegal(true)} style={{ padding: "4px 8px", fontSize: 11, color: "#4b5563", fontFamily: "'Space Mono', monospace", cursor: "pointer" }}>Terms &amp; Privacy</div>
         </div>
       </div>
 
@@ -357,7 +360,9 @@ export default function App() {
                 onInput={(e) => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }} />
               <button className="send-btn" onClick={sendMessage} disabled={loading || !input.trim()} style={{ width: 40, height: 40, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #4ade80, #22d3ee)", color: "#0a0f0a", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 10px rgba(74,222,128,0.3)" }}>↑</button>
             </div>
-            <div style={{ textAlign: "center", marginTop: 8, fontSize: 12, color: "#374151", fontFamily: "'Space Mono', monospace" }}>Enter to send · Shift+Enter for new line</div>
+            <div style={{ textAlign: "center", marginTop: 8, fontSize: 12, color: "#374151", fontFamily: "'Space Mono', monospace" }}>
+              TeachBek uses AI and can make mistakes. Not a substitute for a professional teacher. IELTS/TOEFL scores are estimates only.
+            </div>
           </div>
         </div>
       </div>
@@ -389,6 +394,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {showLegal && <Legal onClose={() => setShowLegal(false)} />}
     </div>
   );
 }

@@ -86,6 +86,10 @@ export default function Auth() {
             {mode === "login" ? "Sign up" : "Log in"}
           </span>
         </div>
+
+        <p style={{ textAlign: "center", marginTop: 24, color: "#4b5563", fontSize: 12, lineHeight: 1.6 }}>
+          TeachBek uses AI and can make mistakes. It is a practice tool, not a substitute for a professional teacher or official exam. By continuing you agree to our Terms &amp; Privacy.
+        </p>
       </div>
     </div>
   );

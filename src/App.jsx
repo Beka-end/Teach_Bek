@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase.js";
 import Auth from "./Auth.jsx";
 import Legal from "./Legal.jsx";
+import NewPassword from "./NewPassword.jsx";
 
 const DAILY_LIMIT = 20;
 
@@ -88,6 +89,7 @@ function MessageBubble({ msg, onWord }) {
 export default function App() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [recovery, setRecovery] = useState(false);
   const [chats, setChats] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -110,7 +112,10 @@ export default function App() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthLoading(false); });
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data: listener } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      if (event === "PASSWORD_RECOVERY") setRecovery(true);
+    });
     return () => listener.subscription.unsubscribe();
   }, []);
 
@@ -277,6 +282,9 @@ export default function App() {
   }, {});
 
   if (authLoading) return <div style={{ height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#080d08", color:"#4ade80", fontFamily:"monospace" }}>Loading...</div>;
+
+  if (recovery) return <NewPassword onDone={()=>setRecovery(false)} />;
+
   if (!session) return <Auth />;
 
   const remaining = Math.max(0, DAILY_LIMIT - usedToday);

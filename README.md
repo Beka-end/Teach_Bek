@@ -74,3 +74,21 @@ VITE_SUPABASE_URL=https://feirhujiabazjqtldpnn.supabase.co
 VITE_SUPABASE_KEY=sb_publishable_5bA6L51GrvsYkMwLzPrFZQ_DS17Wyh7
 ANTHROPIC_API_KEY=sk-ant-...
 ```
+
+---
+
+## 🆕 Update: Progress, Streaks, Mistake Tracking & Word Translation
+
+New features added. To enable them you MUST re-run the database setup:
+
+1. Open Supabase → SQL Editor → New query.
+2. Paste the FULL contents of `supabase-setup.sql` and click **Run**.
+   (It is safe to run again — it only adds the new `corrections` and `profiles` tables and a `meta` column.)
+3. On GitHub, upload the updated `src` and `api` folders (new files: `src/App.jsx`, `api/chat.js`, `api/translate.js`).
+4. Vercel redeploys automatically. No environment variable changes needed.
+
+Features:
+- 🎯 Level estimate (A1–C2) shown in the sidebar and a Progress panel.
+- 🔥 Daily streak that grows when you practise on consecutive days.
+- 📊 Mistake tracking — your most common error types, shown as bars.
+- 🌍 Tap any word TeachBek writes to see its Russian translation.

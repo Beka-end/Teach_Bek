@@ -303,6 +303,11 @@ export default function App() {
           <button className="new-chat-btn" onClick={createNewChat} style={{ width:"100%", padding:"10px 14px", background:"rgba(74,222,128,0.08)", border:"1px solid rgba(74,222,128,0.2)", borderRadius:10, color:"#4ade80", fontFamily:"'DM Sans', sans-serif", fontWeight:600, fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", gap:8 }}>
             <span style={{ fontSize:18 }}>+</span> New conversation
           </button>
+          {!isPremium && (
+            <button onClick={()=>setShowPaywall(true)} style={{ width:"100%", marginTop:8, padding:"10px 14px", background:"linear-gradient(135deg, rgba(74,222,128,0.15), rgba(34,211,238,0.15))", border:"1px solid rgba(74,222,128,0.35)", borderRadius:10, color:"#f0fdf4", fontFamily:"'DM Sans', sans-serif", fontWeight:600, fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+              ⭐ Upgrade to Premium
+            </button>
+          )}
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:"0 8px" }}>
@@ -492,8 +497,22 @@ export default function App() {
               <p style={{ color:"#6b7280", fontSize:14, marginBottom:20 }}>You've reached your free daily limit. Go unlimited!</p>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:12, marginBottom:24 }}>
-              {["Unlimited messages every day","IELTS & TOEFL practice mode (coming soon)","Progress, streaks & mistake tracking","Priority support"].map((f)=>(
-                <div key={f} style={{ display:"flex", alignItems:"center", gap:10, color:"#d1fae5", fontSize:14 }}><span style={{ color:"#4ade80", fontWeight:700 }}>✓</span> {f}</div>
+              {[
+                ["♾️","Unlimited messages","Chat as much as you want, no daily limit"],
+                ["🎓","IELTS & TOEFL practice","AI examiner with band scores (coming soon)"],
+                ["✍️","Essay & writing check","Get your texts corrected and explained (coming soon)"],
+                ["📋","Personal study plan","Lessons based on your real mistakes (coming soon)"],
+                ["📊","Full progress tracking","Levels, streaks & mistake analysis"],
+                ["🌍","Unlimited translations","Tap any word for instant translation"],
+                ["⚡","Priority support","We help you faster"],
+              ].map(([e,t,d])=>(
+                <div key={t} style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+                  <span style={{ fontSize:17, lineHeight:1.3 }}>{e}</span>
+                  <div>
+                    <div style={{ color:"#f0fdf4", fontSize:14, fontWeight:600 }}>{t}</div>
+                    <div style={{ color:"#6b7280", fontSize:12.5 }}>{d}</div>
+                  </div>
+                </div>
               ))}
             </div>
             <div style={{ textAlign:"center", marginBottom:16 }}><span style={{ color:"#f0fdf4", fontSize:32, fontWeight:800 }}>2500₸</span><span style={{ color:"#6b7280", fontSize:15 }}> / month (~$5)</span></div>

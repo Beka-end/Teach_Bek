@@ -92,3 +92,20 @@ Features:
 - 🔥 Daily streak that grows when you practise on consecutive days.
 - 📊 Mistake tracking — your most common error types, shown as bars.
 - 🌍 Tap any word TeachBek writes to see its Russian translation.
+
+---
+
+## 💳 Payment (Kaspi — manual activation)
+
+Users pay 2500₸ via the Kaspi link, then send the receipt to Telegram @sean_fan.
+
+**How to activate Premium for a paying user:**
+
+1. Open Supabase → **Authentication → Users**, find the user by their email, and copy their **User UID**.
+2. Go to **Table Editor → profiles**.
+3. Find the row with that `user_id` (or create one if missing) and set **premium = true**.
+4. Done — the user gets unlimited messages (they may need to refresh the page).
+
+To turn Premium off (e.g. subscription expired), set **premium = false** for that user.
+
+> This is manual on purpose for the early stage. When you have many paying users, an automatic payment integration can replace this step.

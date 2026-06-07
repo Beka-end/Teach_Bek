@@ -100,7 +100,7 @@ export default function App() {
   const [showLegal, setShowLegal] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
   const [topicLoading, setTopicLoading] = useState(false);
-  const [profile, setProfile] = useState({ level: "A1", streak: 0, last_active: null });
+  const [profile, setProfile] = useState({ level: "A1", streak: 0, last_active: null, premium: false });
   const [errorStats, setErrorStats] = useState([]);
   const [totalMsgs, setTotalMsgs] = useState(0);
   const [tip, setTip] = useState(null); // {word, translation, loading}
@@ -115,6 +115,7 @@ export default function App() {
 
   const userId = session?.user?.id;
   const userEmail = session?.user?.email;
+  const isPremium = !!profile.premium;
 
   useEffect(() => { if (userId) { loadChats(); loadUsage(); loadProfile(); loadStats(); } }, [userId]);
   useEffect(() => { if (activeChatId) loadMessages(activeChatId); }, [activeChatId]);
@@ -177,7 +178,7 @@ export default function App() {
   const sendMessage = async (overrideText) => {
     const text = (typeof overrideText === "string" ? overrideText : input).trim();
     if (!text || loading) return;
-    if (usedToday >= DAILY_LIMIT) { setShowPaywall(true); return; }
+    if (!isPremium && usedToday >= DAILY_LIMIT) { setShowPaywall(true); return; }
 
     let chatId = activeChatId;
     if (!chatId) {
@@ -226,7 +227,7 @@ export default function App() {
 
   const surpriseTopic = async () => {
     if (loading || topicLoading) return;
-    if (usedToday >= DAILY_LIMIT) { setShowPaywall(true); return; }
+    if (!isPremium && usedToday >= DAILY_LIMIT) { setShowPaywall(true); return; }
     const prompt = "Surprise me! Pick one fresh, interesting conversation topic for English practice (not the usual boring ones) and start by introducing it in one sentence and asking me an engaging opening question.";
     setTopicLoading(true);
     try { await sendMessage(prompt); } finally { setTopicLoading(false); }
@@ -339,9 +340,15 @@ export default function App() {
         <div style={{ padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", gap:14, background:"rgba(0,0,0,0.2)" }}>
           <button onClick={()=>setSidebarOpen(v=>!v)} style={{ background:"none", border:"none", color:"#6b7280", cursor:"pointer", fontSize:20, padding:4 }}>☰</button>
           <div style={{ flex:1 }}><span style={{ fontWeight:600, fontSize:15, color:"#d1fae5" }}>{chats.find(c=>c.id===activeChatId)?.title || "Select or start a conversation"}</span></div>
-          <div style={{ display:"flex", alignItems:"center", gap:6, background:low?"rgba(248,113,113,0.1)":"rgba(255,255,255,0.04)", border:`1px solid ${low?"rgba(248,113,113,0.3)":"rgba(255,255,255,0.1)"}`, borderRadius:20, padding:"4px 12px" }}>
-            <span style={{ fontSize:12, color:low?"#f87171":"#9ca3af", fontFamily:"'Space Mono', monospace" }}>{remaining}/{DAILY_LIMIT} free left</span>
-          </div>
+          {isPremium ? (
+            <div style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(74,222,128,0.1)", border:"1px solid rgba(74,222,128,0.3)", borderRadius:20, padding:"4px 12px" }}>
+              <span style={{ fontSize:12, color:"#4ade80", fontFamily:"'Space Mono', monospace" }}>⭐ Premium</span>
+            </div>
+          ) : (
+            <div style={{ display:"flex", alignItems:"center", gap:6, background:low?"rgba(248,113,113,0.1)":"rgba(255,255,255,0.04)", border:`1px solid ${low?"rgba(248,113,113,0.3)":"rgba(255,255,255,0.1)"}`, borderRadius:20, padding:"4px 12px" }}>
+              <span style={{ fontSize:12, color:low?"#f87171":"#9ca3af", fontFamily:"'Space Mono', monospace" }}>{remaining}/{DAILY_LIMIT} free left</span>
+            </div>
+          )}
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:"24px 20px" }}>
@@ -386,7 +393,7 @@ export default function App() {
 
         <div style={{ padding:"16px 20px", background:"rgba(0,0,0,0.3)", borderTop:"1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ maxWidth:760, margin:"0 auto" }}>
-            {usedToday >= DAILY_LIMIT && (
+            {!isPremium && usedToday >= DAILY_LIMIT && (
               <div onClick={()=>setShowPaywall(true)} style={{ cursor:"pointer", marginBottom:12, padding:"14px 18px", background:"linear-gradient(135deg, rgba(74,222,128,0.12), rgba(34,211,238,0.12))", border:"1px solid rgba(74,222,128,0.3)", borderRadius:14, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
                 <div>
                   <div style={{ color:"#f0fdf4", fontWeight:600, fontSize:14 }}>🎉 You've used all {DAILY_LIMIT} free messages today!</div>
@@ -489,8 +496,16 @@ export default function App() {
                 <div key={f} style={{ display:"flex", alignItems:"center", gap:10, color:"#d1fae5", fontSize:14 }}><span style={{ color:"#4ade80", fontWeight:700 }}>✓</span> {f}</div>
               ))}
             </div>
-            <div style={{ textAlign:"center", marginBottom:16 }}><span style={{ color:"#f0fdf4", fontSize:32, fontWeight:800 }}>$5</span><span style={{ color:"#6b7280", fontSize:15 }}> / month</span></div>
-            <button onClick={()=>alert("Payment via Kaspi is coming soon! 🚀")} style={{ width:"100%", padding:14, background:"linear-gradient(135deg, #4ade80, #22d3ee)", border:"none", borderRadius:12, color:"#0a0f0a", fontSize:15, fontWeight:700, cursor:"pointer" }}>Upgrade to Premium</button>
+            <div style={{ textAlign:"center", marginBottom:16 }}><span style={{ color:"#f0fdf4", fontSize:32, fontWeight:800 }}>2500₸</span><span style={{ color:"#6b7280", fontSize:15 }}> / month (~$5)</span></div>
+            <a href="https://pay.kaspi.kz/pay/cwevqlzj" target="_blank" rel="noopener noreferrer" style={{ display:"block", width:"100%", padding:14, background:"linear-gradient(135deg, #4ade80, #22d3ee)", border:"none", borderRadius:12, color:"#0a0f0a", fontSize:15, fontWeight:700, cursor:"pointer", textAlign:"center", textDecoration:"none", boxSizing:"border-box" }}>
+              Pay 2500₸ with Kaspi →
+            </a>
+            <div style={{ marginTop:16, padding:"12px 14px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:10, fontSize:13, color:"#9ca3af", lineHeight:1.6 }}>
+              <div style={{ color:"#f0fdf4", fontWeight:600, marginBottom:6, fontSize:13 }}>After paying:</div>
+              1. Enter <b style={{ color:"#4ade80" }}>2500₸</b> on the Kaspi page.<br/>
+              2. Send your payment receipt to Telegram <b style={{ color:"#4ade80" }}>@sean_fan</b>.<br/>
+              3. We'll activate your Premium (usually within a few hours).
+            </div>
             <p style={{ textAlign:"center", color:"#4b5563", fontSize:12, marginTop:12 }}>Your free messages reset tomorrow.</p>
           </div>
         </div>

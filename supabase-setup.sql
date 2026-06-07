@@ -39,8 +39,12 @@ create table if not exists profiles (
   level text default 'A1',
   streak int default 0,
   last_active date,
+  premium boolean default false,
   updated_at timestamp default now()
 );
+
+-- If profiles already exists, add the premium column
+alter table profiles add column if not exists premium boolean default false;
 
 -- 4. Включаем защиту (RLS)
 alter table chats enable row level security;

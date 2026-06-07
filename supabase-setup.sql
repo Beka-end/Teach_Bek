@@ -9,8 +9,12 @@ create table if not exists chats (
   id uuid default gen_random_uuid() primary key,
   user_id uuid not null,
   title text not null,
+  mode text default 'chat',
   created_at timestamp default now()
 );
+
+-- If chats already exists, add the mode column
+alter table chats add column if not exists mode text default 'chat';
 
 create table if not exists messages (
   id uuid default gen_random_uuid() primary key,

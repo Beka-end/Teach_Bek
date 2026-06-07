@@ -109,3 +109,16 @@ Users pay 2500₸ via the Kaspi link, then send the receipt to Telegram @sean_fa
 To turn Premium off (e.g. subscription expired), set **premium = false** for that user.
 
 > This is manual on purpose for the early stage. When you have many paying users, an automatic payment integration can replace this step.
+
+---
+
+## 🚀 Premium Modes (IELTS, Essay, Study Plan)
+
+Three Premium-only modes are available from the "🚀 Premium modes" button in the sidebar:
+- 🎓 IELTS & TOEFL speaking practice (examiner with band scores)
+- ✍️ Essay & writing check (paste text, get corrected feedback)
+- 📋 Personal study plan (built from the user's level and tracked mistakes)
+
+Free users see them locked (🔒) and are invited to upgrade. Premium users start them instantly.
+
+To enable: re-run `supabase-setup.sql` (adds a `mode` column to `chats`), then upload the updated `src` and `api` folders to GitHub.

@@ -99,6 +99,7 @@ export default function App() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
+  const [showModes, setShowModes] = useState(false);
   const [topicLoading, setTopicLoading] = useState(false);
   const [profile, setProfile] = useState({ level: "A1", streak: 0, last_active: null, premium: false });
   const [errorStats, setErrorStats] = useState([]);
@@ -175,23 +176,26 @@ export default function App() {
   };
   const logout = async () => { await supabase.auth.signOut(); setChats([]); setMessages([]); setActiveChatId(null); };
 
-  const sendMessage = async (overrideText) => {
+  const sendMessage = async (overrideText, opts = {}) => {
     const text = (typeof overrideText === "string" ? overrideText : input).trim();
     if (!text || loading) return;
     if (!isPremium && usedToday >= DAILY_LIMIT) { setShowPaywall(true); return; }
 
-    let chatId = activeChatId;
+    let chatId = opts.chatId || activeChatId;
+    let baseMessages = opts.freshChat ? [] : messages;
+    let mode = opts.mode || chats.find(c=>c.id===chatId)?.mode || "chat";
+
     if (!chatId) {
-      const { data } = await supabase.from("chats").insert({ user_id:userId, title:text.slice(0,40) }).select().single();
+      const { data } = await supabase.from("chats").insert({ user_id:userId, title:text.slice(0,40), mode:"chat" }).select().single();
       if (!data) return;
-      chatId = data.id; setChats(p=>[data,...p]); setActiveChatId(data.id);
+      chatId = data.id; mode = "chat"; baseMessages = []; setChats(p=>[data,...p]); setActiveChatId(data.id);
     }
     const userMsg = { role:"user", content:text, chat_id:chatId, created_at:new Date().toISOString() };
     const { data: savedUser } = await supabase.from("messages").insert(userMsg).select().single();
-    const newMessages = [...messages, savedUser || userMsg];
+    const newMessages = [...baseMessages, savedUser || userMsg];
     setMessages(newMessages); setInput(""); setLoading(true); setUsedToday(n=>n+1);
 
-    if (messages.length === 0) {
+    if (mode === "chat" && baseMessages.length === 0) {
       await supabase.from("chats").update({ title:text.slice(0,40) }).eq("id", chatId);
       setChats(p=>p.map(c=>c.id===chatId?{...c,title:text.slice(0,40)}:c));
     }
@@ -199,7 +203,7 @@ export default function App() {
     try {
       const response = await fetch("/api/chat", {
         method:"POST", headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ messages: newMessages.map(m=>({ role:m.role, content:m.content })) }),
+        body: JSON.stringify({ messages: newMessages.map(m=>({ role:m.role, content:m.content })), mode }),
       });
       const data = await response.json();
       if (data.error) throw new Error(data.error);
@@ -209,18 +213,40 @@ export default function App() {
       const { data: savedA } = await supabase.from("messages").insert(assistantMsg).select().single();
       setMessages(prev=>[...prev, savedA || assistantMsg]);
 
-      // Save corrections for tracking
-      if (corrections.length) {
-        await supabase.from("corrections").insert(corrections.map(c=>({ user_id:userId, category:c.category||"other", wrong:c.wrong||"", correct:c.correct||"" })));
+      if (mode === "chat") {
+        if (corrections.length) {
+          await supabase.from("corrections").insert(corrections.map(c=>({ user_id:userId, category:c.category||"other", wrong:c.wrong||"", correct:c.correct||"" })));
+        }
+        await updateStreakAndLevel(data.level);
+        loadStats();
+      } else {
+        await updateStreakAndLevel(null); // still count streak for practising
       }
-      // Update streak + level
-      await updateStreakAndLevel(data.level);
-      loadStats();
     } catch (e) {
       setMessages(prev=>[...prev, { role:"assistant", content:"⚠️ " + (e.message || "Connection error. Please try again."), created_at:new Date().toISOString() }]);
     } finally {
       setLoading(false); textareaRef.current?.focus();
     }
+  };
+
+  const MODE_SEEDS = {
+    ielts: "Let's start an IELTS Speaking practice session. Please begin with Part 1 and ask me your first question.",
+    essay: "I'd like you to check my writing. I'll paste my essay, paragraph, or sentences in my next message.",
+  };
+  const planSeed = () => {
+    const top = errorStats.slice(0,5).map(s=>`${catInfo(s.category).n} (${s.count})`).join(", ");
+    return `Please create a personalized 7-day study plan for me. My level is ${profile.level}. ` + (top ? `My most common mistakes so far: ${top}.` : "I don't have much mistake data yet, so base it on my level.");
+  };
+
+  const startMode = async (mode) => {
+    if (!isPremium) { setShowModes(false); setShowPaywall(true); return; }
+    setShowModes(false);
+    const titleMap = { ielts:"🎓 IELTS Practice", essay:"✍️ Essay Check", plan:"📋 Study Plan" };
+    const { data } = await supabase.from("chats").insert({ user_id:userId, title:titleMap[mode], mode }).select().single();
+    if (!data) return;
+    setChats(p=>[data,...p]); setActiveChatId(data.id); setMessages([]);
+    const seed = mode === "plan" ? planSeed() : MODE_SEEDS[mode];
+    await sendMessage(seed, { chatId: data.id, mode, freshChat: true });
   };
 
   const handleKey = (e) => { if (e.key==="Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
@@ -308,6 +334,9 @@ export default function App() {
               ⭐ Upgrade to Premium
             </button>
           )}
+          <button onClick={()=>setShowModes(true)} style={{ width:"100%", marginTop:8, padding:"10px 14px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:10, color:"#d1fae5", fontFamily:"'DM Sans', sans-serif", fontWeight:600, fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+            🚀 Premium modes
+          </button>
         </div>
 
         <div style={{ flex:1, overflowY:"auto", padding:"0 8px" }}>
@@ -344,7 +373,15 @@ export default function App() {
       <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
         <div style={{ padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", gap:14, background:"rgba(0,0,0,0.2)" }}>
           <button onClick={()=>setSidebarOpen(v=>!v)} style={{ background:"none", border:"none", color:"#6b7280", cursor:"pointer", fontSize:20, padding:4 }}>☰</button>
-          <div style={{ flex:1 }}><span style={{ fontWeight:600, fontSize:15, color:"#d1fae5" }}>{chats.find(c=>c.id===activeChatId)?.title || "Select or start a conversation"}</span></div>
+          <div style={{ flex:1, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontWeight:600, fontSize:15, color:"#d1fae5" }}>{chats.find(c=>c.id===activeChatId)?.title || "Select or start a conversation"}</span>
+            {(() => {
+              const m = chats.find(c=>c.id===activeChatId)?.mode;
+              if (!m || m === "chat") return null;
+              const label = { ielts:"🎓 IELTS Mode", essay:"✍️ Essay Mode", plan:"📋 Plan Mode" }[m];
+              return <span style={{ fontSize:11, color:"#4ade80", background:"rgba(74,222,128,0.1)", border:"1px solid rgba(74,222,128,0.25)", borderRadius:12, padding:"2px 10px", fontFamily:"'Space Mono', monospace" }}>{label}</span>;
+            })()}
+          </div>
           {isPremium ? (
             <div style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(74,222,128,0.1)", border:"1px solid rgba(74,222,128,0.3)", borderRadius:20, padding:"4px 12px" }}>
               <span style={{ fontSize:12, color:"#4ade80", fontFamily:"'Space Mono', monospace" }}>⭐ Premium</span>
@@ -525,6 +562,34 @@ export default function App() {
               3. We'll activate your Premium (usually within a few hours).
             </div>
             <p style={{ textAlign:"center", color:"#4b5563", fontSize:12, marginTop:12 }}>Your free messages reset tomorrow.</p>
+          </div>
+        </div>
+      )}
+
+      {showModes && (
+        <div onClick={()=>setShowModes(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", backdropFilter:"blur(4px)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:150, padding:20 }}>
+          <div onClick={(e)=>e.stopPropagation()} style={{ width:"100%", maxWidth:440, maxHeight:"85vh", overflowY:"auto", background:"#0d130d", border:"1px solid rgba(74,222,128,0.2)", borderRadius:22, padding:28, animation:"fadeIn 0.3s ease" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+              <h2 style={{ color:"#f0fdf4", fontSize:20, fontWeight:700 }}>🚀 Premium Modes</h2>
+              <button onClick={()=>setShowModes(false)} style={{ background:"none", border:"none", color:"#9ca3af", fontSize:24, cursor:"pointer" }}>×</button>
+            </div>
+            <p style={{ color:"#6b7280", fontSize:13, marginBottom:20 }}>{isPremium ? "Choose a mode to start practising." : "These modes are part of Premium. Upgrade to unlock them."}</p>
+            {[
+              ["ielts","🎓","IELTS & TOEFL Practice","A speaking examiner asks exam questions and gives you band scores and feedback."],
+              ["essay","✍️","Essay & Writing Check","Paste any text — get corrections, a band estimate, and improved sentences."],
+              ["plan","📋","Personal Study Plan","A 7-day plan built around your level and your most common mistakes."],
+            ].map(([m,e,t,d])=>(
+              <div key={m} onClick={()=>startMode(m)} style={{ display:"flex", gap:14, alignItems:"flex-start", padding:16, marginBottom:12, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:14, cursor:"pointer", position:"relative" }}>
+                <div style={{ fontSize:28 }}>{e}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ color:"#f0fdf4", fontSize:15, fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>{t} {!isPremium && <span style={{ fontSize:11, color:"#fbbf24" }}>🔒 Premium</span>}</div>
+                  <div style={{ color:"#9ca3af", fontSize:13, marginTop:3, lineHeight:1.5 }}>{d}</div>
+                </div>
+              </div>
+            ))}
+            {!isPremium && (
+              <button onClick={()=>{ setShowModes(false); setShowPaywall(true); }} style={{ width:"100%", marginTop:8, padding:13, background:"linear-gradient(135deg, #4ade80, #22d3ee)", border:"none", borderRadius:12, color:"#0a0f0a", fontSize:15, fontWeight:700, cursor:"pointer" }}>⭐ Unlock with Premium — 2500₸/mo</button>
+            )}
           </div>
         </div>
       )}

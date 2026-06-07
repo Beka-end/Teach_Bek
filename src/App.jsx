@@ -496,14 +496,13 @@ export default function App() {
               <h2 style={{ color:"#f0fdf4", fontSize:22, fontWeight:700, marginBottom:8 }}>TeachBek Premium</h2>
               <p style={{ color:"#6b7280", fontSize:14, marginBottom:20 }}>You've reached your free daily limit. Go unlimited!</p>
             </div>
+            <div style={{ color:"#9ca3af", fontSize:13, marginBottom:12, textAlign:"center" }}>Everything in the free plan, plus:</div>
             <div style={{ display:"flex", flexDirection:"column", gap:12, marginBottom:24 }}>
               {[
                 ["♾️","Unlimited messages","Chat as much as you want, no daily limit"],
                 ["🎓","IELTS & TOEFL practice","AI examiner with band scores (coming soon)"],
                 ["✍️","Essay & writing check","Get your texts corrected and explained (coming soon)"],
                 ["📋","Personal study plan","Lessons based on your real mistakes (coming soon)"],
-                ["📊","Full progress tracking","Levels, streaks & mistake analysis"],
-                ["🌍","Unlimited translations","Tap any word for instant translation"],
                 ["⚡","Priority support","We help you faster"],
               ].map(([e,t,d])=>(
                 <div key={t} style={{ display:"flex", alignItems:"flex-start", gap:10 }}>

@@ -4,6 +4,7 @@ import Auth from "./Auth.jsx";
 import Legal from "./Legal.jsx";
 import NewPassword from "./NewPassword.jsx";
 import PublicPage from "./PublicPage.jsx";
+import { initPaddle, openPaddleCheckout } from "./paddle.js";
 
 const DAILY_LIMIT = 20;
 
@@ -119,6 +120,8 @@ export default function App() {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => { initPaddle(); }, []);
 
   const userId = session?.user?.id;
   const userEmail = session?.user?.email;
@@ -581,13 +584,16 @@ export default function App() {
             </div>
             <div style={{ textAlign:"center", marginBottom:16 }}><span style={{ color:"#f0fdf4", fontSize:32, fontWeight:800 }}>2500₸</span><span style={{ color:"#6b7280", fontSize:15 }}> / month (~$5)</span></div>
             <a href="https://pay.kaspi.kz/pay/cwevqlzj" target="_blank" rel="noopener noreferrer" style={{ display:"block", width:"100%", padding:14, background:"linear-gradient(135deg, #4ade80, #22d3ee)", border:"none", borderRadius:12, color:"#0a0f0a", fontSize:15, fontWeight:700, cursor:"pointer", textAlign:"center", textDecoration:"none", boxSizing:"border-box" }}>
-              Pay 2500₸ with Kaspi →
+              Pay 2500₸ with Kaspi (Kazakhstan) →
             </a>
+            <button onClick={()=>openPaddleCheckout(userEmail, userId)} style={{ width:"100%", marginTop:10, padding:14, background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:12, color:"#f0fdf4", fontSize:15, fontWeight:700, cursor:"pointer", boxSizing:"border-box" }}>
+              💳 Pay by card (international)
+            </button>
             <div style={{ marginTop:16, padding:"12px 14px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:10, fontSize:13, color:"#9ca3af", lineHeight:1.6 }}>
               <div style={{ color:"#f0fdf4", fontWeight:600, marginBottom:6, fontSize:13 }}>After paying:</div>
-              1. Enter <b style={{ color:"#4ade80" }}>2500₸</b> on the Kaspi page.<br/>
-              2. Send your payment receipt to Telegram <b style={{ color:"#4ade80" }}>@sean_fan</b>.<br/>
-              3. We'll activate your Premium (usually within a few hours).
+              <b style={{ color:"#4ade80" }}>Kaspi (Kazakhstan):</b> enter 2500₸, then send your receipt to Telegram <b style={{ color:"#4ade80" }}>@sean_fan</b>.<br/>
+              <b style={{ color:"#4ade80" }}>Card (international):</b> after payment, message <b style={{ color:"#4ade80" }}>@sean_fan</b> with your account email.<br/>
+              We'll activate your Premium (usually within a few hours).
             </div>
             <p style={{ textAlign:"center", color:"#4b5563", fontSize:12, marginTop:12 }}>Your free messages reset tomorrow.</p>
           </div>

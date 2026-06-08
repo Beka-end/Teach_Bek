@@ -8,6 +8,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [agreed, setAgreed] = useState(false);
 
   const submit = async () => {
     setError("");
@@ -31,6 +32,7 @@ export default function Auth() {
 
     if (!password.trim()) { setError("Please enter your password."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (mode === "signup" && !agreed) { setError("Please agree to the Terms and Privacy Policy to continue."); return; }
     setLoading(true);
     try {
       if (mode === "signup") {
@@ -88,6 +90,16 @@ export default function Auth() {
             <div onClick={() => { setMode("reset"); setError(""); setInfo(""); }} style={{ textAlign: "right", color: "#6b7280", fontSize: 13, cursor: "pointer", marginBottom: 4 }}>Forgot password?</div>
           )}
 
+          {mode === "signup" && (
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 4, marginBottom: 12, cursor: "pointer" }}>
+              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}
+                style={{ marginTop: 3, width: 16, height: 16, accentColor: "#4ade80", cursor: "pointer", flexShrink: 0 }} />
+              <span style={{ color: "#9ca3af", fontSize: 13, lineHeight: 1.5 }}>
+                I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: "#4ade80", textDecoration: "underline" }}>Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "#4ade80", textDecoration: "underline" }}>Privacy Policy</a>.
+              </span>
+            </label>
+          )}
+
           {error && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 12, marginTop: 4 }}>⚠️ {error}</div>}
           {info && <div style={{ color: "#4ade80", fontSize: 13, marginBottom: 12, marginTop: 4 }}>✅ {info}</div>}
 
@@ -112,7 +124,7 @@ export default function Auth() {
         </div>
 
         <p style={{ textAlign: "center", marginTop: 24, color: "#4b5563", fontSize: 12, lineHeight: 1.6 }}>
-          TeachBek uses AI and can make mistakes. It is a practice tool, not a substitute for a professional teacher or official exam. By continuing you agree to our Terms &amp; Privacy.
+          TeachBek uses AI and can make mistakes. It is a practice tool, not a substitute for a professional teacher or official exam.
         </p>
       </div>
     </div>

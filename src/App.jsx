@@ -4,6 +4,7 @@ import Auth from "./Auth.jsx";
 import Legal from "./Legal.jsx";
 import NewPassword from "./NewPassword.jsx";
 import PublicPage from "./PublicPage.jsx";
+import Landing from "./Landing.jsx";
 import { initPaddle, openPaddleCheckout } from "./paddle.js";
 
 const DAILY_LIMIT = 20;
@@ -92,6 +93,7 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [recovery, setRecovery] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [chats, setChats] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -308,7 +310,7 @@ export default function App() {
 
   if (recovery) return <NewPassword onDone={()=>setRecovery(false)} />;
 
-  if (!session) return <Auth />;
+  if (!session) return showAuth ? <Auth /> : <Landing onStart={()=>setShowAuth(true)} />;
 
   const remaining = Math.max(0, DAILY_LIMIT - usedToday);
   const low = remaining <= 5;

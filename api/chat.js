@@ -16,7 +16,7 @@ Field rules:
 - "reply": warm, natural, SHORT (1-3 sentences). Always end with one friendly follow-up question.
 - "corrections": list every real mistake from the user's LAST message only. If none, use [].
 - "category": choose ONE from exactly this list: grammar, vocabulary, spelling, articles, prepositions, tense, word-order, punctuation.
-- "level": estimate the user's level, one of: A1, A2, B1, B2, C1, C2.
+- "level": estimate the user's OVERALL English level based on their writing across the whole conversation (vocabulary range, grammar, sentence complexity) — not just their last short message. Use one of: A1, A2, B1, B2, C1, C2.
 
 Output ONLY the JSON object.`;
 

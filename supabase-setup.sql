@@ -49,6 +49,7 @@ create table if not exists profiles (
 
 -- If profiles already exists, add the premium column
 alter table profiles add column if not exists premium boolean default false;
+alter table profiles add column if not exists level_history jsonb default '[]';
 
 -- 4. Включаем защиту (RLS)
 alter table chats enable row level security;

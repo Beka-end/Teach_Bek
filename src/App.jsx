@@ -3,6 +3,7 @@ import { supabase } from "./supabase.js";
 import Auth from "./Auth.jsx";
 import Legal from "./Legal.jsx";
 import NewPassword from "./NewPassword.jsx";
+import PublicPage from "./PublicPage.jsx";
 
 const DAILY_LIMIT = 20;
 
@@ -165,7 +166,16 @@ export default function App() {
     else if (profile.last_active === yesterdayStr()) newStreak = (profile.streak||0) + 1;
     else newStreak = 1;
     const patch = { user_id: userId, streak: newStreak, last_active: todayStr(), updated_at: new Date().toISOString() };
-    if (level && LEVELS.includes(level)) patch.level = level;
+
+    // Smooth the level: keep the last 15 estimates and show their average,
+    // so one short message can't drop the level.
+    if (level && LEVELS.includes(level)) {
+      const prevHist = Array.isArray(profile.level_history) ? profile.level_history : [];
+      const hist = [...prevHist, LEVELS.indexOf(level)].slice(-15);
+      const avg = hist.reduce((a,b)=>a+b,0) / hist.length;
+      patch.level_history = hist;
+      patch.level = LEVELS[Math.round(avg)];
+    }
     await supabase.from("profiles").upsert(patch);
     setProfile((p)=>({ ...p, ...patch }));
   };
@@ -282,6 +292,16 @@ export default function App() {
   }, {});
 
   if (authLoading) return <div style={{ height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#080d08", color:"#4ade80", fontFamily:"monospace" }}>Loading...</div>;
+
+  const publicPath = (() => {
+    const p = window.location.pathname.replace(/\/$/, "");
+    if (p === "/pricing") return "pricing";
+    if (p === "/terms") return "terms";
+    if (p === "/privacy") return "privacy";
+    if (p === "/refund") return "refund";
+    return null;
+  })();
+  if (publicPath) return <PublicPage page={publicPath} />;
 
   if (recovery) return <NewPassword onDone={()=>setRecovery(false)} />;
 

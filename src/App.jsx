@@ -106,6 +106,10 @@ export default function App() {
   const [showLegal, setShowLegal] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
   const [showModes, setShowModes] = useState(false);
+  const [showWords, setShowWords] = useState(false);
+  const [savedWords, setSavedWords] = useState([]);
+  const [flashIdx, setFlashIdx] = useState(null); // index in flashcard review, null = list view
+  const [flashFlipped, setFlashFlipped] = useState(false);
   const [topicLoading, setTopicLoading] = useState(false);
   const [profile, setProfile] = useState({ level: "A1", streak: 0, last_active: null, premium: false });
   const [errorStats, setErrorStats] = useState([]);
@@ -130,7 +134,7 @@ export default function App() {
   const userEmail = session?.user?.email;
   const isPremium = !!profile.premium;
 
-  useEffect(() => { if (userId) { loadChats(); loadUsage(); loadProfile(); loadStats(); } }, [userId]);
+  useEffect(() => { if (userId) { loadChats(); loadUsage(); loadProfile(); loadStats(); loadWords(); } }, [userId]);
   useEffect(() => { if (activeChatId) loadMessages(activeChatId); }, [activeChatId]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }); }, [messages, loading]);
 
@@ -280,6 +284,20 @@ export default function App() {
     try { await sendMessage(prompt); } finally { setTopicLoading(false); }
   };
 
+  const loadWords = async () => {
+    const { data } = await supabase.from("saved_words").select("*").eq("user_id", userId).order("created_at", { ascending:false });
+    setSavedWords(data || []);
+  };
+  const saveWord = async (word, translation) => {
+    if (!word) return;
+    const { data } = await supabase.from("saved_words").insert({ user_id:userId, word, translation: translation || "" }).select().single();
+    if (data) setSavedWords(p=>[data, ...p]);
+  };
+  const deleteWord = async (id) => {
+    await supabase.from("saved_words").delete().eq("id", id);
+    setSavedWords(p=>p.filter(w=>w.id!==id));
+  };
+
   const translateWord = async (word) => {
     setTip({ word, translation:"", loading:true });
     try {
@@ -384,6 +402,9 @@ export default function App() {
           )}
           <button onClick={()=>setShowModes(true)} style={{ width:"100%", marginTop:8, padding:"10px 14px", background:"rgba(120,85,45,0.03)", border:"1px solid rgba(120,85,45,0.1)", borderRadius:10, color:"#5a4530", fontFamily:"'DM Sans', sans-serif", fontWeight:600, fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
             🚀 Premium modes
+          </button>
+          <button onClick={()=>{ setShowWords(true); setFlashIdx(null); loadWords(); }} style={{ width:"100%", marginTop:8, padding:"10px 14px", background:"rgba(120,85,45,0.03)", border:"1px solid rgba(120,85,45,0.1)", borderRadius:10, color:"#5a4530", fontFamily:"'DM Sans', sans-serif", fontWeight:600, fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+            📒 My words {savedWords.length > 0 && <span style={{ fontSize:12, color:"#a96a32" }}>({savedWords.length})</span>}
           </button>
         </div>
 
@@ -505,13 +526,19 @@ export default function App() {
         </div>
       </div>
 
-      {/* Floating "Translate" button for selected sentence */}
+      {/* Floating "Translate" bar for selected sentence — fixed at bottom-center so it's never hidden behind browser/keyboard UI */}
       {sel && (
-        <button
-          onClick={() => { translateWord(sel.text); setSel(null); window.getSelection()?.removeAllRanges(); }}
-          style={{ position:"fixed", left: Math.min(Math.max(sel.x - 60, 10), window.innerWidth - 130), top: Math.max(sel.y - 48, 10), zIndex:130, padding:"8px 16px", background:"linear-gradient(135deg, #a96a32, #d2a25e)", color:"#fff8ec", border:"none", borderRadius:10, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans', sans-serif", boxShadow:"0 4px 16px rgba(0,0,0,0.4)" }}>
-          🌍 Translate
-        </button>
+        <div style={{ position:"fixed", left:0, right:0, bottom:90, display:"flex", justifyContent:"center", zIndex:140, pointerEvents:"none", padding:"0 16px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, background:"#43301d", borderRadius:14, padding:"10px 12px 10px 16px", boxShadow:"0 8px 30px rgba(0,0,0,0.45)", pointerEvents:"auto", maxWidth:"94vw" }}>
+            <span style={{ color:"#e9d7bd", fontSize:13, maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>"{sel.text}"</span>
+            <button
+              onClick={() => { translateWord(sel.text); setSel(null); window.getSelection()?.removeAllRanges(); }}
+              style={{ padding:"10px 18px", background:"linear-gradient(135deg, #a96a32, #d2a25e)", color:"#fff8ec", border:"none", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans', sans-serif", whiteSpace:"nowrap" }}>
+              🌍 Translate
+            </button>
+            <button onClick={()=>{ setSel(null); window.getSelection()?.removeAllRanges(); }} style={{ background:"none", border:"none", color:"#9a8264", fontSize:20, cursor:"pointer", padding:"0 4px" }}>×</button>
+          </div>
+        </div>
       )}
 
       {/* Translation tooltip */}
@@ -520,7 +547,10 @@ export default function App() {
           <div onClick={(e)=>e.stopPropagation()} style={{ background:"#efe0c2", border:"1px solid rgba(169,106,50,0.3)", borderRadius:14, padding:"14px 20px", boxShadow:"0 8px 30px rgba(0,0,0,0.5)", animation:"fadeIn 0.2s ease", minWidth:200, maxWidth:"min(90vw, 480px)", textAlign:"center" }}>
             <div style={{ color:"#8a7256", fontSize:13, fontFamily:"'Space Mono', monospace", lineHeight:1.4 }}>{tip.word}</div>
             <div style={{ color:"#a96a32", fontSize: tip.translation && tip.translation.length > 30 ? 16 : 20, fontWeight:700, marginTop:6, lineHeight:1.4 }}>{tip.loading ? "…" : tip.translation}</div>
-            <div onClick={()=>setTip(null)} style={{ marginTop:8, color:"#ad9678", fontSize:11, cursor:"pointer", fontFamily:"'Space Mono', monospace" }}>tap to close</div>
+            {!tip.loading && tip.translation && tip.translation !== "—" && (
+              <button onClick={()=>{ saveWord(tip.word, tip.translation); setTip(null); }} style={{ marginTop:12, padding:"8px 18px", background:"linear-gradient(135deg, #a96a32, #d2a25e)", color:"#fff8ec", border:"none", borderRadius:10, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans', sans-serif" }}>⭐ Save to my words</button>
+            )}
+            <div onClick={()=>setTip(null)} style={{ marginTop:10, color:"#ad9678", fontSize:11, cursor:"pointer", fontFamily:"'Space Mono', monospace" }}>tap to close</div>
           </div>
         </div>
       )}
@@ -594,9 +624,9 @@ export default function App() {
             <div style={{ display:"flex", flexDirection:"column", gap:12, marginBottom:24 }}>
               {[
                 ["♾️","Unlimited messages","Chat as much as you want, no daily limit"],
-                ["🎓","IELTS & TOEFL practice","AI examiner with band scores (coming soon)"],
-                ["✍️","Essay & writing check","Get your texts corrected and explained (coming soon)"],
-                ["📋","Personal study plan","Lessons based on your real mistakes (coming soon)"],
+                ["🎓","IELTS & TOEFL practice","AI examiner asks exam questions and gives band-score feedback"],
+                ["✍️","Essay & writing check","Paste any text and get corrections, a score, and improved sentences"],
+                ["📋","Personal study plan","A 7-day plan built from your level and your real mistakes"],
                 ["⚡","Priority support","We help you faster"],
               ].map(([e,t,d])=>(
                 <div key={t} style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
@@ -649,6 +679,72 @@ export default function App() {
             ))}
             {!isPremium && (
               <button onClick={()=>{ setShowModes(false); setShowPaywall(true); }} style={{ width:"100%", marginTop:8, padding:13, background:"linear-gradient(135deg, #a96a32, #d2a25e)", border:"none", borderRadius:12, color:"#fff8ec", fontSize:15, fontWeight:700, cursor:"pointer" }}>⭐ Unlock with Premium — 2500₸/mo</button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showWords && (
+        <div onClick={()=>setShowWords(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", backdropFilter:"blur(4px)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:150, padding:20 }}>
+          <div onClick={(e)=>e.stopPropagation()} style={{ width:"100%", maxWidth:440, maxHeight:"85vh", overflowY:"auto", background:"#efe0c2", border:"1px solid rgba(169,106,50,0.2)", borderRadius:22, padding:28, animation:"fadeIn 0.3s ease" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+              <h2 style={{ color:"#43301d", fontSize:20, fontWeight:700 }}>📒 My words</h2>
+              <button onClick={()=>setShowWords(false)} style={{ background:"none", border:"none", color:"#8a7256", fontSize:24, cursor:"pointer" }}>×</button>
+            </div>
+
+            {flashIdx === null ? (
+              <>
+                <p style={{ color:"#9a8264", fontSize:13, marginBottom:16 }}>Words and phrases you saved while translating. Review them as flashcards!</p>
+                {savedWords.length === 0 ? (
+                  <div style={{ color:"#9a8264", fontSize:14, textAlign:"center", padding:"24px 0" }}>No saved words yet.<br/>Tap a word in chat, then "Save to my words".</div>
+                ) : (
+                  <>
+                    <button onClick={()=>{ setFlashIdx(0); setFlashFlipped(false); }} style={{ width:"100%", padding:13, marginBottom:16, background:"linear-gradient(135deg, #a96a32, #d2a25e)", border:"none", borderRadius:12, color:"#fff8ec", fontSize:15, fontWeight:700, cursor:"pointer" }}>▶ Review as flashcards ({savedWords.length})</button>
+                    {savedWords.map(w=>(
+                      <div key={w.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, padding:"10px 14px", marginBottom:8, background:"#fffaf0", border:"1px solid rgba(120,85,45,0.12)", borderRadius:10 }}>
+                        <div style={{ flex:1, overflow:"hidden" }}>
+                          <div style={{ color:"#43301d", fontSize:14, fontWeight:600 }}>{w.word}</div>
+                          <div style={{ color:"#9a8264", fontSize:13 }}>{w.translation}</div>
+                        </div>
+                        <button onClick={()=>deleteWord(w.id)} style={{ background:"none", border:"none", color:"#ad9678", cursor:"pointer", fontSize:15, flexShrink:0 }}>🗑</button>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </>
+            ) : (
+              // Flashcard review
+              (() => {
+                const card = savedWords[flashIdx];
+                if (!card) { setFlashIdx(null); return null; }
+                return (
+                  <div style={{ textAlign:"center" }}>
+                    <div style={{ color:"#9a8264", fontSize:13, fontFamily:"'Space Mono', monospace", marginBottom:14 }}>{flashIdx+1} / {savedWords.length}</div>
+                    <div onClick={()=>setFlashFlipped(f=>!f)} style={{ minHeight:160, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:"#fffaf0", border:"1px solid rgba(120,85,45,0.15)", borderRadius:16, padding:24, cursor:"pointer", marginBottom:16 }}>
+                      {!flashFlipped ? (
+                        <>
+                          <div style={{ color:"#43301d", fontSize:24, fontWeight:700 }}>{card.word}</div>
+                          <div style={{ color:"#ad9678", fontSize:12, marginTop:12, fontFamily:"'Space Mono', monospace" }}>tap to flip</div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ color:"#a96a32", fontSize:24, fontWeight:700 }}>{card.translation}</div>
+                          <div style={{ color:"#ad9678", fontSize:12, marginTop:12, fontFamily:"'Space Mono', monospace" }}>tap to flip back</div>
+                        </>
+                      )}
+                    </div>
+                    <div style={{ display:"flex", gap:10 }}>
+                      <button onClick={()=>{ setFlashIdx(i=>Math.max(0,i-1)); setFlashFlipped(false); }} disabled={flashIdx===0} style={{ flex:1, padding:12, background:"rgba(120,85,45,0.08)", border:"1px solid rgba(120,85,45,0.15)", borderRadius:10, color:"#5a4530", fontSize:14, fontWeight:600, cursor: flashIdx===0?"default":"pointer", opacity: flashIdx===0?0.4:1 }}>← Prev</button>
+                      {flashIdx < savedWords.length-1 ? (
+                        <button onClick={()=>{ setFlashIdx(i=>i+1); setFlashFlipped(false); }} style={{ flex:1, padding:12, background:"linear-gradient(135deg, #a96a32, #d2a25e)", border:"none", borderRadius:10, color:"#fff8ec", fontSize:14, fontWeight:700, cursor:"pointer" }}>Next →</button>
+                      ) : (
+                        <button onClick={()=>setFlashIdx(null)} style={{ flex:1, padding:12, background:"linear-gradient(135deg, #a96a32, #d2a25e)", border:"none", borderRadius:10, color:"#fff8ec", fontSize:14, fontWeight:700, cursor:"pointer" }}>✓ Done</button>
+                      )}
+                    </div>
+                    <button onClick={()=>setFlashIdx(null)} style={{ marginTop:12, background:"none", border:"none", color:"#9a8264", fontSize:13, cursor:"pointer", fontFamily:"'Space Mono', monospace" }}>← back to list</button>
+                  </div>
+                );
+              })()
             )}
           </div>
         </div>

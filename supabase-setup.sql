@@ -51,11 +51,21 @@ create table if not exists profiles (
 alter table profiles add column if not exists premium boolean default false;
 alter table profiles add column if not exists level_history jsonb default '[]';
 
+-- Saved words / phrases for the personal dictionary & flashcards
+create table if not exists saved_words (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid not null,
+  word text not null,
+  translation text,
+  created_at timestamp default now()
+);
+
 -- 4. Включаем защиту (RLS)
 alter table chats enable row level security;
 alter table messages enable row level security;
 alter table corrections enable row level security;
 alter table profiles enable row level security;
+alter table saved_words enable row level security;
 
 -- 5. Правила доступа (пересоздаём, чтобы не было дублей)
 drop policy if exists "users manage own chats" on chats;
@@ -73,4 +83,8 @@ create policy "own corrections" on corrections for all
 
 drop policy if exists "own profile" on profiles;
 create policy "own profile" on profiles for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "own saved_words" on saved_words;
+create policy "own saved_words" on saved_words for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);

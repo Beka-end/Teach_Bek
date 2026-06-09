@@ -122,3 +122,11 @@ Three Premium-only modes are available from the "🚀 Premium modes" button in t
 Free users see them locked (🔒) and are invited to upgrade. Premium users start them instantly.
 
 To enable: re-run `supabase-setup.sql` (adds a `mode` column to `chats`), then upload the updated `src` and `api` folders to GitHub.
+
+---
+
+## 🆕 Personal dictionary & flashcards
+
+Users can now save words/phrases they translate (a "Save to my words" button appears in the translation popup). Saved words live in the "📒 My words" panel in the sidebar, where they can be reviewed as flashcards.
+
+To enable: re-run `supabase-setup.sql` (adds a `saved_words` table), then upload the updated `src` folder to GitHub.

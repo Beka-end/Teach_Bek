@@ -8,13 +8,13 @@ export default function Legal({ onClose }) {
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 640, maxHeight: "85vh", overflowY: "auto", background: "#0d130d", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "32px 32px 40px", position: "relative", fontFamily: "'DM Sans', sans-serif" }}>
-        <button onClick={onClose} style={{ position: "sticky", top: 0, float: "right", background: "#0d130d", border: "none", color: "#9ca3af", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 640, maxHeight: "85vh", overflowY: "auto", background: "#efe0c2", border: "1px solid rgba(120,85,45,0.1)", borderRadius: 20, padding: "32px 32px 40px", position: "relative", fontFamily: "'DM Sans', sans-serif" }}>
+        <button onClick={onClose} style={{ position: "sticky", top: 0, float: "right", background: "#efe0c2", border: "none", color: "#8a7256", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
 
-        <h1 style={{ color: "#f0fdf4", fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Terms & Privacy</h1>
-        <p style={{ color: "#4b5563", fontSize: 13, marginBottom: 24, fontFamily: "'Space Mono', monospace" }}>Last updated: {today}</p>
+        <h1 style={{ color: "#43301d", fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Terms & Privacy</h1>
+        <p style={{ color: "#ad9678", fontSize: 13, marginBottom: 24, fontFamily: "'Space Mono', monospace" }}>Last updated: {today}</p>
 
-        <div style={{ color: "#cbd5e1", fontSize: 14.5, lineHeight: 1.7 }}>
+        <div style={{ color: "#5a4530", fontSize: 14.5, lineHeight: 1.7 }}>
           <h2 style={S.h2}>1. About TeachBek</h2>
           <p style={S.p}>TeachBek is an online tool that helps you practise English through conversation with an AI assistant. By creating an account or using TeachBek, you agree to these Terms. If you do not agree, please do not use the service.</p>
 
@@ -43,7 +43,7 @@ export default function Legal({ onClose }) {
           <h2 style={S.h2}>9. Contact</h2>
           <p style={S.p}>For any questions about these Terms or your data, please contact the TeachBek team through the email associated with the service.</p>
 
-          <p style={{ ...S.p, color: "#6b7280", fontSize: 13, marginTop: 28, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
+          <p style={{ ...S.p, color: "#9a8264", fontSize: 13, marginTop: 28, borderTop: "1px solid rgba(120,85,45,0.08)", paddingTop: 16 }}>
             This document is a plain-language summary intended to set clear expectations. It is not legal advice. For full legal protection, especially once paid subscriptions are active, these terms should be reviewed by a qualified lawyer in your jurisdiction.
           </p>
         </div>
@@ -53,7 +53,7 @@ export default function Legal({ onClose }) {
 }
 
 const S = {
-  h2: { color: "#f0fdf4", fontSize: 16, fontWeight: 600, marginTop: 22, marginBottom: 6 },
+  h2: { color: "#43301d", fontSize: 16, fontWeight: 600, marginTop: 22, marginBottom: 6 },
   p: { marginBottom: 10 },
-  strong: { color: "#f0fdf4" },
+  strong: { color: "#43301d" },
 };

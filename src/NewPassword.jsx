@@ -24,26 +24,26 @@ export default function NewPassword({ onDone }) {
   };
 
   return (
-    <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#080d08", fontFamily: "'DM Sans', sans-serif", padding: 20 }}>
+    <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f7eedd", fontFamily: "'DM Sans', sans-serif", padding: 20 }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
         @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .auth-input:focus { border-color: #4ade80 !important; }
+        .auth-input:focus { border-color: #a96a32 !important; }
       `}</style>
       <div style={{ width: "100%", maxWidth: 400, animation: "fadeIn 0.5s ease" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ width: 72, height: 72, borderRadius: 22, background: "linear-gradient(135deg, #4ade80, #22d3ee)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800, color: "#0a0f0a", marginBottom: 16, boxShadow: "0 0 40px rgba(74,222,128,0.3)" }}>T</div>
-          <h1 style={{ color: "#f0fdf4", fontSize: 24, fontWeight: 700 }}>Set a new password</h1>
-          <p style={{ color: "#6b7280", fontSize: 14, marginTop: 6 }}>Choose a new password for your account.</p>
+          <div style={{ width: 72, height: 72, borderRadius: 22, background: "linear-gradient(135deg, #a96a32, #d2a25e)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800, color: "#fff8ec", marginBottom: 16, boxShadow: "0 0 40px rgba(169,106,50,0.3)" }}>T</div>
+          <h1 style={{ color: "#43301d", fontSize: 24, fontWeight: 700 }}>Set a new password</h1>
+          <p style={{ color: "#9a8264", fontSize: 14, marginTop: 6 }}>Choose a new password for your account.</p>
         </div>
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 24 }}>
-          <label style={{ fontSize: 12, color: "#9ca3af", fontFamily: "'Space Mono', monospace", textTransform: "uppercase", letterSpacing: 1 }}>New password</label>
+        <div style={{ background: "rgba(120,85,45,0.03)", border: "1px solid rgba(120,85,45,0.08)", borderRadius: 18, padding: 24 }}>
+          <label style={{ fontSize: 12, color: "#8a7256", fontFamily: "'Space Mono', monospace", textTransform: "uppercase", letterSpacing: 1 }}>New password</label>
           <input className="auth-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e)=>{ if(e.key==="Enter") submit(); }} placeholder="••••••••"
-            style={{ width: "100%", marginTop: 6, marginBottom: 12, padding: "12px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#e2e8f0", fontSize: 15, fontFamily: "'DM Sans', sans-serif", outline: "none", transition: "border-color 0.2s" }} />
-          {error && <div style={{ color: "#f87171", fontSize: 13, marginBottom: 12 }}>⚠️ {error}</div>}
-          {info && <div style={{ color: "#4ade80", fontSize: 13, marginBottom: 12 }}>✅ {info}</div>}
+            style={{ width: "100%", marginTop: 6, marginBottom: 12, padding: "12px 14px", background: "rgba(120,85,45,0.04)", border: "1px solid rgba(120,85,45,0.1)", borderRadius: 10, color: "#43301d", fontSize: 15, fontFamily: "'DM Sans', sans-serif", outline: "none", transition: "border-color 0.2s" }} />
+          {error && <div style={{ color: "#c0432e", fontSize: 13, marginBottom: 12 }}>⚠️ {error}</div>}
+          {info && <div style={{ color: "#a96a32", fontSize: 13, marginBottom: 12 }}>✅ {info}</div>}
           <button onClick={submit} disabled={loading}
-            style={{ width: "100%", marginTop: 4, padding: "13px", background: "linear-gradient(135deg, #4ade80, #22d3ee)", border: "none", borderRadius: 12, color: "#0a0f0a", fontSize: 15, fontWeight: 700, cursor: loading?"wait":"pointer", fontFamily: "'DM Sans', sans-serif", opacity: loading?0.6:1 }}>
+            style={{ width: "100%", marginTop: 4, padding: "13px", background: "linear-gradient(135deg, #a96a32, #d2a25e)", border: "none", borderRadius: 12, color: "#fff8ec", fontSize: 15, fontWeight: 700, cursor: loading?"wait":"pointer", fontFamily: "'DM Sans', sans-serif", opacity: loading?0.6:1 }}>
             {loading ? "Saving..." : "Save new password"}
           </button>
         </div>

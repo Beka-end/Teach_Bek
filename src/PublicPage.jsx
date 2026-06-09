@@ -3,30 +3,30 @@
 // NOTE: These are plain-language drafts. Have a lawyer review before scaling.
 
 const wrap = {
-  minHeight: "100vh", background: "#080d08", color: "#cbd5e1",
+  minHeight: "100vh", background: "#f7eedd", color: "#5a4530",
   fontFamily: "'DM Sans', sans-serif", padding: "40px 20px",
 };
 const inner = { maxWidth: 760, margin: "0 auto" };
-const h1 = { color: "#f0fdf4", fontSize: 30, fontWeight: 700, marginBottom: 6, letterSpacing: -0.5 };
-const h2 = { color: "#f0fdf4", fontSize: 18, fontWeight: 600, marginTop: 26, marginBottom: 8 };
+const h1 = { color: "#43301d", fontSize: 30, fontWeight: 700, marginBottom: 6, letterSpacing: -0.5 };
+const h2 = { color: "#43301d", fontSize: 18, fontWeight: 600, marginTop: 26, marginBottom: 8 };
 const p = { fontSize: 15, lineHeight: 1.75, marginBottom: 10 };
-const small = { color: "#4b5563", fontSize: 13, fontFamily: "'Space Mono', monospace" };
-const strong = { color: "#f0fdf4" };
+const small = { color: "#ad9678", fontSize: 13, fontFamily: "'Space Mono', monospace" };
+const strong = { color: "#43301d" };
 
 function Shell({ title, updated, children }) {
   return (
     <div style={wrap}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');`}</style>
       <div style={inner}>
-        <a href="/" style={{ color: "#4ade80", textDecoration: "none", fontSize: 14, fontFamily: "'Space Mono', monospace" }}>← Back to TeachBek</a>
+        <a href="/" style={{ color: "#a96a32", textDecoration: "none", fontSize: 14, fontFamily: "'Space Mono', monospace" }}>← Back to TeachBek</a>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 24, marginBottom: 4 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(135deg, #4ade80, #22d3ee)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#0a0f0a" }}>T</div>
-          <span style={{ color: "#f0fdf4", fontWeight: 700, fontSize: 18 }}>TeachBek</span>
+          <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(135deg, #a96a32, #d2a25e)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff8ec" }}>T</div>
+          <span style={{ color: "#43301d", fontWeight: 700, fontSize: 18 }}>TeachBek</span>
         </div>
         <h1 style={h1}>{title}</h1>
         {updated && <p style={small}>Last updated: {updated}</p>}
         <div style={{ marginTop: 20 }}>{children}</div>
-        <p style={{ ...small, marginTop: 40, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
+        <p style={{ ...small, marginTop: 40, borderTop: "1px solid rgba(120,85,45,0.08)", paddingTop: 16 }}>
           Questions? Contact us on Telegram @sean_fan.
         </p>
       </div>

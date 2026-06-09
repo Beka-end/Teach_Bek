@@ -111,6 +111,7 @@ export default function App() {
   const [errorStats, setErrorStats] = useState([]);
   const [totalMsgs, setTotalMsgs] = useState(0);
   const [tip, setTip] = useState(null); // {word, translation, loading}
+  const [sel, setSel] = useState(null); // {text, x, y} for selected-text translate button
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -290,6 +291,20 @@ export default function App() {
     }
   };
 
+  // When the user selects text inside an assistant message, show a floating "Translate" button.
+  const handleSelection = () => {
+    const s = window.getSelection();
+    const text = s ? s.toString().trim() : "";
+    if (text && text.length > 1 && text.split(/\s+/).length > 1) {
+      try {
+        const rect = s.getRangeAt(0).getBoundingClientRect();
+        setSel({ text, x: rect.left + rect.width / 2, y: rect.top });
+      } catch { setSel(null); }
+    } else {
+      setSel(null);
+    }
+  };
+
   const groupedChats = chats.reduce((acc, chat) => {
     const label = formatDate(chat.created_at);
     if (!acc[label]) acc[label] = [];
@@ -317,7 +332,7 @@ export default function App() {
   const maxErr = Math.max(1, ...errorStats.map(s=>s.count));
 
   return (
-    <div style={{ display:"flex", height:"100vh", background:"#080d08", fontFamily:"'DM Sans', sans-serif", overflow:"hidden" }}>
+    <div style={{ display:"flex", height:"100vh", background:"radial-gradient(1200px 600px at 80% -10%, rgba(34,211,238,0.06), transparent 60%), radial-gradient(900px 500px at -10% 110%, rgba(74,222,128,0.06), transparent 55%), #070b07", fontFamily:"'DM Sans', sans-serif", overflow:"hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
         @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-8px)} }
@@ -431,7 +446,7 @@ export default function App() {
             <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"100%", textAlign:"center", animation:"fadeIn 0.5s ease" }}>
               <div style={{ width:80, height:80, borderRadius:24, background:"linear-gradient(135deg, #4ade80, #22d3ee)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, marginBottom:20, boxShadow:"0 0 40px rgba(74,222,128,0.3)" }}>🎓</div>
               <h2 style={{ color:"#f0fdf4", fontWeight:700, fontSize:24, marginBottom:10 }}>Welcome to TeachBek</h2>
-              <p style={{ color:"#6b7280", fontSize:15, maxWidth:400, lineHeight:1.6 }}>Your personal AI English teacher. Write anything — I'll chat with you and gently correct your mistakes. Tap any word I write to translate it.</p>
+              <p style={{ color:"#6b7280", fontSize:15, maxWidth:400, lineHeight:1.6 }}>Your personal AI English teacher. Write anything — I'll chat with you and gently correct your mistakes. Tap any word to translate it, or select a whole sentence to translate it all.</p>
 
               <div style={{ marginTop:28, width:"100%", maxWidth:440, background:"linear-gradient(135deg, rgba(74,222,128,0.08), rgba(34,211,238,0.08))", border:"1px solid rgba(74,222,128,0.25)", borderRadius:18, padding:20, textAlign:"left" }}>
                 <div style={{ fontSize:11, color:"#4ade80", fontFamily:"'Space Mono', monospace", textTransform:"uppercase", letterSpacing:1.5, marginBottom:8 }}>✨ Not sure what to say?</div>
@@ -453,7 +468,7 @@ export default function App() {
               </div>
             </div>
           ) : (
-            <div style={{ maxWidth:760, margin:"0 auto" }}>
+            <div style={{ maxWidth:760, margin:"0 auto" }} onMouseUp={handleSelection} onTouchEnd={handleSelection}>
               {messages.map((msg,i)=>(<div key={i} style={{ animation:"fadeIn 0.3s ease" }}><MessageBubble msg={msg} onWord={translateWord} /></div>))}
               {loading && (
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:20 }}>
@@ -490,12 +505,21 @@ export default function App() {
         </div>
       </div>
 
+      {/* Floating "Translate" button for selected sentence */}
+      {sel && (
+        <button
+          onClick={() => { translateWord(sel.text); setSel(null); window.getSelection()?.removeAllRanges(); }}
+          style={{ position:"fixed", left: Math.min(Math.max(sel.x - 60, 10), window.innerWidth - 130), top: Math.max(sel.y - 48, 10), zIndex:130, padding:"8px 16px", background:"linear-gradient(135deg, #4ade80, #22d3ee)", color:"#0a0f0a", border:"none", borderRadius:10, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"'DM Sans', sans-serif", boxShadow:"0 4px 16px rgba(0,0,0,0.4)" }}>
+          🌍 Translate
+        </button>
+      )}
+
       {/* Translation tooltip */}
       {tip && (
         <div onClick={()=>setTip(null)} style={{ position:"fixed", inset:0, zIndex:120, display:"flex", alignItems:"flex-end", justifyContent:"center", paddingBottom:120 }}>
-          <div onClick={(e)=>e.stopPropagation()} style={{ background:"#0d130d", border:"1px solid rgba(74,222,128,0.3)", borderRadius:14, padding:"14px 20px", boxShadow:"0 8px 30px rgba(0,0,0,0.5)", animation:"fadeIn 0.2s ease", minWidth:200, textAlign:"center" }}>
-            <div style={{ color:"#9ca3af", fontSize:13, fontFamily:"'Space Mono', monospace" }}>{tip.word}</div>
-            <div style={{ color:"#4ade80", fontSize:20, fontWeight:700, marginTop:4 }}>{tip.loading ? "…" : tip.translation}</div>
+          <div onClick={(e)=>e.stopPropagation()} style={{ background:"#0d130d", border:"1px solid rgba(74,222,128,0.3)", borderRadius:14, padding:"14px 20px", boxShadow:"0 8px 30px rgba(0,0,0,0.5)", animation:"fadeIn 0.2s ease", minWidth:200, maxWidth:"min(90vw, 480px)", textAlign:"center" }}>
+            <div style={{ color:"#9ca3af", fontSize:13, fontFamily:"'Space Mono', monospace", lineHeight:1.4 }}>{tip.word}</div>
+            <div style={{ color:"#4ade80", fontSize: tip.translation && tip.translation.length > 30 ? 16 : 20, fontWeight:700, marginTop:6, lineHeight:1.4 }}>{tip.loading ? "…" : tip.translation}</div>
             <div onClick={()=>setTip(null)} style={{ marginTop:8, color:"#4b5563", fontSize:11, cursor:"pointer", fontFamily:"'Space Mono', monospace" }}>tap to close</div>
           </div>
         </div>

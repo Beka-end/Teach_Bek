@@ -18,9 +18,9 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 80,
-        system: "You are a concise English-to-Russian dictionary. Given an English word or short phrase, reply with ONLY its most common Russian translation (1-4 words). No explanations, no English, no punctuation beyond the translation itself.",
-        messages: [{ role: "user", content: word.slice(0, 60) }],
+        max_tokens: 300,
+        system: "You translate English to Russian. If given a single word or short phrase, reply with only its most common Russian translation (1-4 words). If given a full sentence or longer text, reply with a natural Russian translation of it. Reply with ONLY the Russian translation — no English, no explanations, no quotes.",
+        messages: [{ role: "user", content: word.slice(0, 600) }],
       }),
     });
     const data = await response.json();

@@ -50,6 +50,7 @@ create table if not exists profiles (
 -- If profiles already exists, add the premium column
 alter table profiles add column if not exists premium boolean default false;
 alter table profiles add column if not exists level_history jsonb default '[]';
+alter table profiles add column if not exists tested boolean default false;
 
 -- Saved words / phrases for the personal dictionary & flashcards
 create table if not exists saved_words (

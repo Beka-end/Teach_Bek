@@ -5,6 +5,7 @@ import Legal from "./Legal.jsx";
 import NewPassword from "./NewPassword.jsx";
 import PublicPage from "./PublicPage.jsx";
 import Landing from "./Landing.jsx";
+import LevelTest from "./LevelTest.jsx";
 import { initPaddle, openPaddleCheckout } from "./paddle.js";
 
 const DAILY_LIMIT = 20;
@@ -62,7 +63,7 @@ function MessageBubble({ msg, onWord }) {
       {!isUser && (
         <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
           <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg, #a96a32, #d2a25e)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700, color:"#fff8ec" }}>T</div>
-          <span style={{ fontSize:12, color:"#9a8264", fontFamily:"'Space Mono', monospace" }}>TeachBek</span>
+          <span style={{ fontSize:12, color:"#9a8264", fontFamily:"'Space Mono', monospace" }}>Bek</span>
         </div>
       )}
       <div style={{ maxWidth:"78%", display:"flex", flexDirection:"column", gap:8 }}>
@@ -94,6 +95,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [recovery, setRecovery] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [testDone, setTestDone] = useState(false);
   const [chats, setChats] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -156,8 +158,21 @@ export default function App() {
   };
   const loadProfile = async () => {
     const { data } = await supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle();
-    if (data) setProfile(data);
-    else { await supabase.from("profiles").insert({ user_id: userId, level:"A1", streak:0 }); setProfile({ level:"A1", streak:0, last_active:null }); }
+    if (data) { setProfile(data); setTestDone(!!data.tested); }
+    else { await supabase.from("profiles").insert({ user_id: userId, level:"A1", streak:0 }); setProfile({ level:"A1", streak:0, last_active:null }); setTestDone(false); }
+  };
+
+  const finishTest = async (level) => {
+    const patch = { user_id: userId, tested: true, updated_at: new Date().toISOString() };
+    if (level && LEVELS.includes(level)) { patch.level = level; patch.level_history = [LEVELS.indexOf(level)]; }
+    await supabase.from("profiles").upsert(patch);
+    setProfile((p)=>({ ...p, ...patch }));
+    setTestDone(true);
+  };
+  const skipTest = async () => {
+    await supabase.from("profiles").upsert({ user_id: userId, tested: true, updated_at: new Date().toISOString() });
+    setProfile((p)=>({ ...p, tested: true }));
+    setTestDone(true);
   };
   const loadStats = async () => {
     const { data } = await supabase.from("corrections").select("category").eq("user_id", userId).limit(1000);
@@ -345,6 +360,8 @@ export default function App() {
 
   if (!session) return showAuth ? <Auth /> : <Landing onStart={()=>setShowAuth(true)} />;
 
+  if (!testDone) return <LevelTest onDone={finishTest} onSkip={skipTest} />;
+
   const remaining = Math.max(0, DAILY_LIMIT - usedToday);
   const low = remaining <= 5;
   const maxErr = Math.max(1, ...errorStats.map(s=>s.count));
@@ -466,8 +483,8 @@ export default function App() {
           {!activeChatId || messages.length===0 ? (
             <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"100%", textAlign:"center", animation:"fadeIn 0.5s ease" }}>
               <div style={{ width:80, height:80, borderRadius:24, background:"linear-gradient(135deg, #a96a32, #d2a25e)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:36, marginBottom:20, boxShadow:"0 0 40px rgba(169,106,50,0.3)" }}>🎓</div>
-              <h2 style={{ color:"#43301d", fontWeight:700, fontSize:24, marginBottom:10 }}>Welcome to TeachBek</h2>
-              <p style={{ color:"#9a8264", fontSize:15, maxWidth:400, lineHeight:1.6 }}>Your personal AI English teacher. Write anything — I'll chat with you and gently correct your mistakes. Tap any word to translate it, or select a whole sentence to translate it all.</p>
+              <h2 style={{ color:"#43301d", fontWeight:700, fontSize:24, marginBottom:10 }}>Hi, I'm Bek 👋</h2>
+              <p style={{ color:"#9a8264", fontSize:15, maxWidth:420, lineHeight:1.6 }}>Your English coach. I'm strict — I won't let a single mistake slip — but I'm on your side and I'll push you to really improve. Write anything in English to start. Tap a word to translate it, or select a sentence to translate it all.</p>
 
               <div style={{ marginTop:28, width:"100%", maxWidth:440, background:"linear-gradient(135deg, rgba(169,106,50,0.08), rgba(210,162,94,0.08))", border:"1px solid rgba(169,106,50,0.25)", borderRadius:18, padding:20, textAlign:"left" }}>
                 <div style={{ fontSize:11, color:"#a96a32", fontFamily:"'Space Mono', monospace", textTransform:"uppercase", letterSpacing:1.5, marginBottom:8 }}>✨ Not sure what to say?</div>

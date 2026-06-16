@@ -48,6 +48,7 @@ function scoreToLevel(correctLevels) {
 }
 
 export default function LevelTest({ onDone, onSkip }) {
+  const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [correct, setCorrect] = useState([]);
   const [picked, setPicked] = useState(null);
@@ -55,6 +56,26 @@ export default function LevelTest({ onDone, onSkip }) {
 
   const choco = "#a96a32";
   const q = QUESTIONS[step];
+
+  // Intro: let the user choose to take the test or go straight to chat.
+  if (!started && !finished) {
+    return (
+      <div style={shell}>
+        <style>{css}</style>
+        <div style={{ ...card, textAlign: "center", animation: "pop 0.5s ease" }}>
+          <div style={{ width: 72, height: 72, borderRadius: 20, background: `linear-gradient(135deg, ${choco}, #d2a25e)`, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 34, marginBottom: 18 }}>🎯</div>
+          <h2 style={{ color: "#43301d", fontSize: 23, fontWeight: 800, marginBottom: 10 }}>Want to know your English level?</h2>
+          <p style={{ color: "#9a8264", fontSize: 15, lineHeight: 1.6, marginBottom: 26 }}>
+            Take a quick 6-question test (about 1 minute) and Bek will start you at the right level. Or jump straight into chatting — your choice.
+          </p>
+          <button onClick={() => setStarted(true)} style={btnPrimary}>🎯 Take the 1-min test</button>
+          <button onClick={onSkip} style={{ width: "100%", marginTop: 12, padding: 13, background: "transparent", border: "1px solid rgba(120,85,45,0.25)", borderRadius: 14, color: "#5a4530", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+            Skip — just start chatting →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const choose = (i) => {
     if (picked !== null) return;
